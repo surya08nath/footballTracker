@@ -106,13 +106,25 @@ def delete():
 scheduler.add_job(delete, trigger='cron', hour='*')
 
 # API Route to Fetch and Store Matches
+# @app.get("/matches")
+# def get_matches_api(db: Session = Depends(get_db),date: str=datetime.today().strftime("%Y-%m-%d")):
+#     print(date)
+#     matches = db.query(Match).filter(Match.date == f"{date}").all()
+#     if(matches==[]):
+#         matches=get_matches(db,date) 
+#     print(matches)
+#     return {"matches": matches}
+
 @app.get("/matches")
-def get_matches_api(db: Session = Depends(get_db),date: str=datetime.today().strftime("%Y-%m-%d")):
-    print(date)
-    matches = db.query(Match).filter(Match.date == f"{date}").all()
-    if(matches==[]):
-        matches=get_matches(db,date) 
-    print(matches)
+def get_matches_api(db: Session = Depends(get_db)):
+    today = datetime.today().strftime("%Y-%m-%d")
+    yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    matches = db.query(Match).filter(Match.date.in_([today, yesterday])).all()
+    
+    if not matches:
+        matches = get_matches(db, today) + get_matches(db, yesterday)
+    
     return {"matches": matches}
 
 @app.get("/getall")
